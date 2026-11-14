@@ -1099,7 +1099,7 @@ class MainActivity : AppCompatActivity() {
             c.addView(box)
         }
 
-.        if (!days.contains(Calendar.SATURDAY) && !days.contains(Calendar.SUNDAY)) {
+        if (!days.contains(Calendar.SATURDAY) && !days.contains(Calendar.SUNDAY)) {
             val w = tv("Субота й неділя: вихідні", 14f, gray)
             w.layoutParams = lp(16)
             c.addView(w)
