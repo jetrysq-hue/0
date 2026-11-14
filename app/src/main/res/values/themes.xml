@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.JetryLessons" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/app_bg</item>
+        <item name="android:statusBarColor">@color/app_bg</item>
+        <item name="android:navigationBarColor">@color/app_bg</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+    </style>
+</resources>

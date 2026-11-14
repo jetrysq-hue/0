@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">JetryLessons</string>
+    <string name="settings">Налаштування</string>
+    <string name="schedule">Розклад</string>
+    <string name="change_mode">Змінити режим</string>
+    <string name="current_mode">Поточний режим</string>
+    <string name="mode_school">У школі</string>
+    <string name="mode_remote">Дистанційно</string>
+    <string name="widget_description">Показує наступний урок за розкладом</string>
+    <string name="widget_label_next">Наступний урок</string>
+    <string name="widget_label_day">Розклад на день</string>
+    <string name="widget_day_description">Усі уроки на сьогодні, поточний підсвічується</string>
+    <string name="week_title">Розклад на тиждень</string>
+    <string name="update_schedule">Оновити розклад</string>
+</resources>
