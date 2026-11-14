@@ -24,7 +24,6 @@ import android.os.SystemClock
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
-import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.RemoteViews
 import android.widget.ScrollView
@@ -84,7 +83,6 @@ object Schedule {
 
     private fun t(h: Int, m: Int) = h * 60 + m
 
-    // Запасний розклад: використовується, поки з інтернету нічого не завантажено
     private val DEFAULT = ScheduleData(
         week = mapOf(
             Calendar.MONDAY to listOf(
@@ -141,7 +139,6 @@ object Schedule {
 
     fun withEmoji(subject: String): String = "${emoji(subject)} $subject"
 
-    // Додає оголошення (якщо воно є) до тексту
     fun withNotice(text: String?): String? {
         val parts = ArrayList<String>()
         if (!text.isNullOrEmpty()) parts.add(text)
@@ -179,7 +176,6 @@ object Schedule {
     fun format(minutes: Int): String =
         "%02d:%02d".format(minutes / 60, minutes % 60)
 
-    // Читає збережений з інтернету розклад; якщо його немає або він зіпсований — вбудований
     fun load(context: Context) {
         val json = Prefs.getScheduleJson(context)
         data = (if (json != null) parse(json) else null) ?: DEFAULT
@@ -226,9 +222,9 @@ object Schedule {
             if (msgArr != null) {
                 for (i in 0 until msgArr.length()) {
                     val o = msgArr.optJSONObject(i) ?: continue
-                    val text = o.optString("text", "").trim()
+                    val textMsg = o.optString("text", "").trim()
                     val id = o.optLong("id", 0L)
-                    if (text.isNotEmpty() && id > 0L) msgs.add(Msg(id, text, o.optString("time", "")))
+                    if (textMsg.isNotEmpty() && id > 0L) msgs.add(Msg(id, textMsg, o.optString("time", "")))
                 }
             }
             msgs.sortBy { it.id }
@@ -265,7 +261,6 @@ object Schedule {
 // ===================== ЗАВАНТАЖЕННЯ РОЗКЛАДУ З ІНТЕРНЕТУ =====================
 
 object ScheduleSync {
-    // Посилання на файл розкладу. Якщо ваш логін або назва репозиторію інші — змініть тут.
     const val SCHEDULE_URL =
         "https://raw.githubusercontent.com/jetrysq-hue/jetry-schedule/main/schedule.json"
 
@@ -274,7 +269,6 @@ object ScheduleSync {
     fun isStale(context: Context): Boolean =
         System.currentTimeMillis() - Prefs.getLastAttempt(context) > AUTO_INTERVAL_MS
 
-    // Повертає true, якщо вдалося завантажити коректний розклад
     fun fetch(context: Context): Boolean {
         Prefs.setLastAttempt(context, System.currentTimeMillis())
         var conn: HttpURLConnection? = null
@@ -287,6 +281,7 @@ object ScheduleSync {
             conn.useCaches = false
             conn.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
             conn.setRequestProperty("Pragma", "no-cache")
+
             if (conn.responseCode != 200) return false
             val text = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
                 .trim().removePrefix("\uFEFF")
@@ -305,7 +300,6 @@ object ScheduleSync {
         }
     }
 
-    // Порівнює новий розклад зі старим і показує сповіщення
     private fun handleChanges(context: Context, old: ScheduleData?, fresh: ScheduleData) {
         if (old != null) {
             if (old.week != fresh.week || old.school != fresh.school || old.remote != fresh.remote) {
@@ -321,7 +315,6 @@ object ScheduleSync {
         val last = Prefs.getLastMsgId(context)
         val maxId = fresh.messages.maxOfOrNull { it.id } ?: 0L
         if (last < 0L) {
-            // перше завантаження: старі повідомлення не показуємо
             Prefs.setLastMsgId(context, maxId)
         } else {
             val fresher = fresh.messages.filter { it.id > last }.sortedBy { it.id }
@@ -365,7 +358,7 @@ object Notifier {
                 .build()
             nm.notify(id, n)
         } catch (e: Exception) {
-            // сповіщення не повинні ламати застосунок
+            // ігноруємо
         }
     }
 }
@@ -506,7 +499,6 @@ class LessonWidgetProvider : AppWidgetProvider() {
         const val ACTION_TOGGLE_MODE = "com.example.yrok67.TOGGLE_MODE"
         const val ACTION_REFRESH = "com.example.yrok67.REFRESH"
 
-        // Раз на кілька годин підтягує свіжий розклад з інтернету у фоні
         fun syncIfStale(context: Context, pending: BroadcastReceiver.PendingResult?) {
             if (!ScheduleSync.isStale(context)) {
                 pending?.finish()
@@ -524,7 +516,6 @@ class LessonWidgetProvider : AppWidgetProvider() {
             }.start()
         }
 
-        // Оновлює ОБИДВА віджети і планує наступне оновлення
         fun updateAll(context: Context) {
             try {
                 Schedule.load(context)
@@ -541,7 +532,7 @@ class LessonWidgetProvider : AppWidgetProvider() {
                 }
                 scheduleNext(context, state)
             } catch (e: Exception) {
-                // віджет не повинен падати
+                // ігноруємо
             }
         }
 
@@ -859,8 +850,6 @@ class MainActivity : AppCompatActivity() {
         pollHandler.removeCallbacks(pollRunnable)
     }
 
-    // ---------- допоміжні функції для вигляду ----------
-
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
     private fun shape(color: Int, radiusDp: Int): GradientDrawable {
@@ -929,8 +918,6 @@ class MainActivity : AppCompatActivity() {
         return r
     }
 
-    // ---------- вкладки ----------
-
     private fun showTab(i: Int) {
         scrollMode.visibility = if (i == 0) View.VISIBLE else View.GONE
         scrollWeek.visibility = if (i == 1) View.VISIBLE else View.GONE
@@ -969,8 +956,6 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
     }
-
-    // ---------- вкладка 1: режим і дзвінки ----------
 
     private fun modeCard(m: Mode, active: Boolean): LinearLayout {
         val c = card(if (active) blue else Color.TRANSPARENT, if (active) 2 else 0)
@@ -1056,8 +1041,6 @@ class MainActivity : AppCompatActivity() {
         c.addView(sc)
     }
 
-    // ---------- вкладка 2: тиждень ----------
-
     private fun renderWeek() {
         val c = weekContainer
         c.removeAllViews()
@@ -1116,7 +1099,7 @@ class MainActivity : AppCompatActivity() {
             c.addView(box)
         }
 
-        if (!days.contains(Calendar.SATURDAY) && !days.contains(Calendar.SUNDAY)) {
+.        if (!days.contains(Calendar.SATURDAY) && !days.contains(Calendar.SUNDAY)) {
             val w = tv("Субота й неділя: вихідні", 14f, gray)
             w.layoutParams = lp(16)
             c.addView(w)
